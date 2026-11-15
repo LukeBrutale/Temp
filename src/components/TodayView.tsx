@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   CalendarPlus,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   Plus,
   Trash2,
   Wand2,
+  Zap,
 } from 'lucide-react';
 import {
   WeeklyGoals,
@@ -49,6 +51,7 @@ interface TodayViewProps {
   onDeleteWorkout: (id: string) => void;
   onDuplicateWorkout: (session: WorkoutSession) => void;
   onStartTemplateLive: (template: WorkoutTemplate) => void;
+  onQuickAddTemplate: (template: WorkoutTemplate) => void;
   onOpenAiPlanModal: () => void;
   onNotify?: (message: string) => void;
 }
@@ -68,12 +71,14 @@ export const TodayView: React.FC<TodayViewProps> = ({
   onDeleteWorkout,
   onDuplicateWorkout,
   onStartTemplateLive,
+  onQuickAddTemplate,
   onOpenAiPlanModal,
   onNotify,
 }) => {
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [calendarSyncOpen, setCalendarSyncOpen] = useState(false);
+  const [quickAddedId, setQuickAddedId] = useState<string | null>(null);
 
   const weekStart = getWeekStartMonday(selectedDate);
   const weekDays = getWeekDays(weekStart);
@@ -346,15 +351,47 @@ export const TodayView: React.FC<TodayViewProps> = ({
             </button>
 
             {scheduledProgramDay.template && (
-              <button
-                type="button"
-                disabled={hasActiveLive}
-                onClick={() => onStartTemplateLive(scheduledProgramDay.template!)}
-                className="min-h-[44px] px-4 py-2.5 text-sm font-semibold rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:pointer-events-none text-white transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
-              >
-                <Play className="w-4 h-4" />
-                {hasActiveLive ? 'Сесія триває' : 'Запустити за планом'}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tpl = scheduledProgramDay.template!;
+                    onQuickAddTemplate(tpl);
+                    setQuickAddedId(`sched-${tpl.id}`);
+                    window.setTimeout(() => {
+                      setQuickAddedId((curr) =>
+                        curr === `sched-${tpl.id}` ? null : curr
+                      );
+                    }, 1500);
+                  }}
+                  className={`min-h-[44px] px-3.5 py-2 text-sm font-semibold rounded-xl border transition-colors flex items-center justify-center gap-2 whitespace-nowrap ${
+                    quickAddedId === `sched-${scheduledProgramDay.template.id}`
+                      ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                      : 'border-orange-200 dark:border-orange-800/70 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-600 dark:hover:bg-orange-600 hover:text-white hover:border-orange-600 dark:hover:border-orange-500 text-orange-800 dark:text-orange-300'
+                  }`}
+                >
+                  {quickAddedId === `sched-${scheduledProgramDay.template.id}` ? (
+                    <>
+                      <Check className="w-4 h-4 shrink-0" />
+                      Додано
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 shrink-0" />
+                      Швидке додавання
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  disabled={hasActiveLive}
+                  onClick={() => onStartTemplateLive(scheduledProgramDay.template!)}
+                  className="min-h-[44px] px-4 py-2.5 text-sm font-semibold rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:pointer-events-none text-white transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  <Play className="w-4 h-4" />
+                  {hasActiveLive ? 'Сесія триває' : 'Запустити за планом'}
+                </button>
+              </>
             )}
           </div>
         </section>
@@ -587,40 +624,73 @@ export const TodayView: React.FC<TodayViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {templates.slice(0, 3).map((tpl) => (
-            <div
-              key={tpl.id}
-              className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] p-5 flex flex-col justify-between gap-4"
-            >
-              <div>
-                <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                  <span className={`font-semibold ${CATEGORY_ACCENTS[tpl.category]}`}>
-                    {CATEGORY_LABELS[tpl.category]}
-                  </span>
-                  <span aria-hidden="true">·</span>
-                  <span className="font-mono tabular-nums">~{tpl.estimatedMinutes} хв</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{tpl.exercises.length} впр.</span>
-                </div>
-                <h4 className="mt-1.5 text-base font-semibold text-[var(--text-primary)]">
-                  {tpl.title}
-                </h4>
-                <p className="mt-1 text-sm text-[var(--text-secondary)] line-clamp-2">
-                  {tpl.description}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                disabled={hasActiveLive}
-                onClick={() => onStartTemplateLive(tpl)}
-                className="min-h-[44px] w-full px-4 py-2 text-sm font-semibold rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] hover:bg-slate-900 dark:hover:bg-orange-600 hover:text-white hover:border-slate-900 dark:hover:border-orange-500 disabled:opacity-50 disabled:pointer-events-none text-[var(--text-primary)] transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+          {templates.slice(0, 3).map((tpl) => {
+            const wasQuickAdded = quickAddedId === tpl.id;
+            return (
+              <div
+                key={tpl.id}
+                className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-subtle)] p-5 flex flex-col justify-between gap-4"
               >
-                <Play className="w-4 h-4" />
-                {hasActiveLive ? 'Сесія вже триває' : 'Почати тренування'}
-              </button>
-            </div>
-          ))}
+                <div>
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                    <span className={`font-semibold ${CATEGORY_ACCENTS[tpl.category]}`}>
+                      {CATEGORY_LABELS[tpl.category]}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span className="font-mono tabular-nums">~{tpl.estimatedMinutes} хв</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{tpl.exercises.length} впр.</span>
+                  </div>
+                  <h4 className="mt-1.5 text-base font-semibold text-[var(--text-primary)]">
+                    {tpl.title}
+                  </h4>
+                  <p className="mt-1 text-sm text-[var(--text-secondary)] line-clamp-2">
+                    {tpl.description}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onQuickAddTemplate(tpl);
+                      setQuickAddedId(tpl.id);
+                      window.setTimeout(() => {
+                        setQuickAddedId((curr) => (curr === tpl.id ? null : curr));
+                      }, 1500);
+                    }}
+                    className={`min-h-[44px] w-full px-4 py-2 text-sm font-semibold rounded-xl border transition-colors flex items-center justify-center gap-2 whitespace-nowrap ${
+                      wasQuickAdded
+                        ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                        : 'border-orange-200 dark:border-orange-800/70 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-600 dark:hover:bg-orange-600 hover:text-white hover:border-orange-600 dark:hover:border-orange-500 text-orange-800 dark:text-orange-300'
+                    }`}
+                  >
+                    {wasQuickAdded ? (
+                      <>
+                        <Check className="w-4 h-4 shrink-0" />
+                        Додано за шаблоном
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 shrink-0" />
+                        Швидке додавання
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={hasActiveLive}
+                    onClick={() => onStartTemplateLive(tpl)}
+                    className="min-h-[44px] w-full px-4 py-2 text-sm font-semibold rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-subtle)] hover:bg-slate-900 dark:hover:bg-orange-600 hover:text-white hover:border-slate-900 dark:hover:border-orange-500 disabled:opacity-50 disabled:pointer-events-none text-[var(--text-primary)] transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                    <Play className="w-4 h-4 shrink-0" />
+                    {hasActiveLive ? 'Сесія вже триває' : 'Почати тренування'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
       {calendarSyncOpen && scheduledProgramDay && (

@@ -7,6 +7,7 @@ import {
   ListChecks,
   Moon,
   Plus,
+  Settings,
   Sun,
   User,
 } from 'lucide-react';
@@ -15,6 +16,7 @@ import { ExercisesGoalsView } from './components/ExercisesGoalsView';
 import { LiveSessionBanner } from './components/LiveSessionBanner';
 import { ProfileView } from './components/ProfileView';
 import { ProgressView } from './components/ProgressView';
+import { SettingsView } from './components/SettingsView';
 import { TodayView } from './components/TodayView';
 import { WorkoutModal } from './components/WorkoutModal';
 import { WorkoutsView } from './components/WorkoutsView';
@@ -60,7 +62,7 @@ import {
   toLocalDateString,
 } from './utils/workoutStats';
 
-type NavTab = 'today' | 'workouts' | 'progress' | 'exercises' | 'profile';
+type NavTab = 'today' | 'workouts' | 'progress' | 'exercises' | 'profile' | 'settings';
 
 const STORAGE_KEYS = {
   sessions: 'temp_workouts_v1',
@@ -525,6 +527,33 @@ export default function App() {
     showToast(`Розпочато: ${template.title}`);
   };
 
+  const handleQuickAddTemplate = (template: WorkoutTemplate) => {
+    const now = new Date();
+    const nowMs = Date.now();
+    const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const quickSession: WorkoutSession = {
+      id: `w-quick-${nowMs}`,
+      title: template.title,
+      date: selectedDate,
+      startTime: hhmm,
+      category: template.category,
+      durationMinutes: template.estimatedMinutes,
+      rpe: 7,
+      completed: true,
+      exercises: template.exercises.map((ex, idx) => ({
+        ...ex,
+        id: `we-quick-${nowMs}-${idx}`,
+        sets: ex.sets.map((s, sIdx) => ({
+          ...s,
+          id: `s-quick-${nowMs}-${idx}-${sIdx}`,
+          completed: true,
+        })),
+      })),
+    };
+    setSessions((prev) => [quickSession, ...prev]);
+    showToast(`Швидко додано: ${template.title}`);
+  };
+
   const handleFinishLive = (elapsedMinutes: number) => {
     if (!activeLive) return;
     const finished: WorkoutSession = {
@@ -686,6 +715,7 @@ export default function App() {
     { id: 'progress', label: 'Прогрес', icon: BarChart3 },
     { id: 'exercises', label: 'Вправи і цілі', icon: Dumbbell },
     { id: 'profile', label: 'Профіль', icon: User },
+    { id: 'settings', label: 'Налаштування', icon: Settings },
   ];
 
   const pageHeading: Record<NavTab, string> = {
@@ -694,6 +724,7 @@ export default function App() {
     progress: 'Аналітика та рекорди',
     exercises: 'Вправи та цілі',
     profile: 'Профіль та синхронізація',
+    settings: 'Налаштування',
   };
 
   return (
@@ -893,6 +924,7 @@ export default function App() {
               onDeleteWorkout={handleDeleteWorkout}
               onDuplicateWorkout={handleDuplicateWorkout}
               onStartTemplateLive={handleStartTemplateLive}
+              onQuickAddTemplate={handleQuickAddTemplate}
               onOpenAiPlanModal={() => setAiModalOpen(true)}
               onNotify={showToast}
             />
@@ -932,19 +964,6 @@ export default function App() {
               exercises={exercises}
               goals={goals}
               bodyProfile={bodyProfile}
-              theme={theme}
-              notificationSettings={notificationSettings}
-              onUpdateTheme={(nextTheme) => {
-                setTheme(nextTheme);
-                showToast(
-                  nextTheme === 'dark'
-                    ? 'Увімкнено темну тему'
-                    : nextTheme === 'light'
-                      ? 'Увімкнено світлу тему'
-                      : 'Увімкнено системну тему'
-                );
-              }}
-              onUpdateNotificationSettings={setNotificationSettings}
               onAddExercise={handleAddCustomExercise}
               onDeleteCustomExercise={handleDeleteCustomExercise}
               onUpdateGoals={setGoals}
@@ -952,7 +971,6 @@ export default function App() {
               onExportJson={handleExportJson}
               onImportJson={handleImportJson}
               onResetDemoData={handleResetDemoData}
-              onNotify={showToast}
             />
           )}
           {activeTab === 'profile' && (
@@ -976,13 +994,31 @@ export default function App() {
               onNotify={showToast}
             />
           )}
+          {activeTab === 'settings' && (
+            <SettingsView
+              theme={theme}
+              notificationSettings={notificationSettings}
+              onUpdateTheme={(nextTheme) => {
+                setTheme(nextTheme);
+                showToast(
+                  nextTheme === 'dark'
+                    ? 'Увімкнено темну тему'
+                    : nextTheme === 'light'
+                      ? 'Увімкнено світлу тему'
+                      : 'Увімкнено системну тему'
+                );
+              }}
+              onUpdateNotificationSettings={setNotificationSettings}
+              onNotify={showToast}
+            />
+          )}
         </main>
       </div>
 
       {/* Mobile Fixed Bottom Tab Bar (60px) */}
       <nav
         aria-label="Мобільна навігація"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 h-[60px] bg-[var(--bg-surface)]/95 backdrop-blur-md border-t border-[var(--border-subtle)] grid grid-cols-5 items-center"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 h-[60px] bg-[var(--bg-surface)]/95 backdrop-blur-md border-t border-[var(--border-subtle)] grid grid-cols-6 items-center"
       >
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -1000,7 +1036,11 @@ export default function App() {
             >
               <Icon className="w-5 h-5" />
               <span className="text-[10px] font-semibold tracking-tight whitespace-nowrap">
-                {item.id === 'exercises' ? 'Вправи' : item.label}
+                {item.id === 'exercises'
+                  ? 'Вправи'
+                  : item.id === 'settings'
+                    ? 'Налашт.'
+                    : item.label}
               </span>
             </button>
           );
