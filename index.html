@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Темп — Щоденник тренувань</title>
+    <meta
+      name="description"
+      content="Спортивний додаток для відстеження щоденних тренувань, силових підходів, кардіо та особистих рекордів."
+    />
+    <meta property="og:title" content="Темп — Щоденник тренувань" />
+    <meta
+      property="og:description"
+      content="Спортивний додаток для відстеження щоденних тренувань, силових підходів, кардіо та особистих рекордів."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var raw = window.localStorage.getItem('temp_theme_v1');
+          var mode = raw ? JSON.parse(raw) : 'light';
+          var isDark =
+            mode === 'dark' ||
+            (mode === 'system' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', Boolean(isDark));
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased selection:bg-orange-100 selection:text-orange-900 dark:selection:bg-orange-950/70 dark:selection:text-orange-200 transition-colors duration-150">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "Темп — Щоденник тренувань",
+  "description": "Спортивний додаток для відстеження щоденних тренувань, силових підходів, кардіо та особистих рекордів.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
